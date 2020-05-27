@@ -16,6 +16,9 @@ var turnMr = false;
 var all_male_words = Object.keys( word_dict).concat( Object.keys( name_dict ) );;
 var all_female_words = Object.values( word_dict ).concat( Object.values( name_dict ) );;
 
+var mfnames = ["ETHAN", "CHRIS", "JOE", "NICK", "TOM", "ERIC", "JACOB", "RILEY", "GREG", "CLAY", "GRAHAM", "JUSTIN"];
+var ffnames = ["ASHLYN", "CHRISTINA", "CAROLE", "JUSTINE", "ASHLEY", "JENNIFER", "BRITTANY", "ERIKA", "HAILEY"];
+
 //
 
 
@@ -32,6 +35,10 @@ for ( var i = 0; i < all_female_words.length; i ++ ) {
 }
 
 //
+var temp_male_words = "male words:\n";
+var temp_female_words = "female words:\n";
+var temp_male_last_names = [];
+var temp_female_last_names = [];
 
 function applyContent () {
 
@@ -81,30 +88,80 @@ function applyContent () {
 
         //Delete surname after female name
 
-        for ( var i = 0; i < words.length; i ++ ) {
+        for ( var i = 0; i < words.length - 1; i ++ ) {
 
-            if ( values_name.indexOf( words[ i ].toUpperCase() ) !== -1 || name_dict[ words[ i ] ] && name_dict[ words[ i + 1 ] ] ) {
+            if ( ffnames.indexOf( words[ i ].toUpperCase() ) !== -1 || name_dict[ words[ i ] ] && name_dict[ words[ i + 1 ] ] ) {
 
-                words.splice( i + 1, 1 );
+                nextWord = words[i+1];
+                if (/[A-Z]/.test(nextWord[0]) && temp_female_last_names.indexOf(nextWord) === -1) {
+                
+                    temp_female_last_names.push(words[i + 1]);
+                    words.splice( i + 1, 1 );
+                    
+                }
 
             }
 
         }
+
+        for ( var i = 0; i < temp_female_last_names.length; i ++) {
         
+            temp_female_last_names[i] = temp_female_last_names[i].toLowerCase();
+            
+        }
+        
+        //Delete surname after male name
+        
+        for ( var i = 0; i < words.length - 1; i ++ ) {
+
+            if ( mfnames.indexOf( words[ i ].toUpperCase() ) !== -1 || name_dict[ words[ i ] ] && name_dict[ words[ i + 1 ] ] ) {
+
+                nextWord = words[i+1];
+                if (/[A-Z]/.test(nextWord[0]) && temp_male_last_names.indexOf(nextWord) === -1) {
+                
+                    temp_male_last_names.push(words[i + 1]);
+                    words.splice( i + 1, 1 );
+                    
+                }
+
+            }
+
+        }
+
+        for ( var i = 0; i < temp_male_last_names.length; i ++) {
+        
+            temp_male_last_names[i] = temp_male_last_names[i].toLowerCase();
+            
+        }
+        
+        /*for ( var i = 0; i < mfnames.length; i++) {
+            
+            mfnames[i] = mfnames[i].toLowerCase();
+            
+        }
+        
+        for ( var i = 0; i < ffnames.length; i++) {
+            
+            ffnames[i] = ffnames[i].toLowerCase();
+            
+        }*/
+            
 
         // Count Male/Female Words
 
         for ( var i = 0; i < words.length; i ++ ) {
 
-            if ( all_male_words.indexOf( words[ i ].toLowerCase() ) >= 0 ) {
+            if ( all_male_words.indexOf( words[ i ].toLowerCase() ) >= 0 || temp_male_last_names.indexOf(words[i].toLowerCase() ) >= 0 || mfnames.indexOf(words[i].toUpperCase() ) >= 0) {
 
                 m_count ++;
+                temp_male_words += words[i] + "\n";
 
             }
 
-            if ( all_female_words.indexOf( words[ i ].toLowerCase() ) >= 0 ) {
+            if ( all_female_words.indexOf( words[ i ].toLowerCase() ) >= 0 || temp_female_last_names.indexOf(words[i].toLowerCase() ) >= 0 || ffnames.indexOf(words[i].toUpperCase() ) >= 0) {
 
                 f_count ++;
+                temp_female_words += words[i] +"\n";
 
             }
 
@@ -164,6 +221,7 @@ function applyContent () {
             }
 
         });
+        
 
 
 /**
@@ -204,7 +262,14 @@ function applyContent () {
 
 });
 
+let a = document.createElement('a');
+a.href = "data:application/octet-stream,"+encodeURIComponent(temp_male_words + temp_female_words);
+a.download = 'list.txt';
+a.click();
+
 };
+
+
 
 
 
@@ -246,7 +311,7 @@ chrome.runtime.onMessage.addListener( function ( msg, sender, sendResponse ) {
     if ( msg.activate ) {
 
         applyContent();
-
+        
     } 
 
     else {
