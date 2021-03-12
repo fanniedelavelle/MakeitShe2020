@@ -11,6 +11,7 @@ window.fnames = [
     "DOROTHY",
     "LISA",
     "NANCY",
+    "KAMALA",
     "KAREN",
     "BETTY",
     "HELEN",

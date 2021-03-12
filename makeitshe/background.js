@@ -4,6 +4,12 @@ var siteStateList = JSON.parse( localStorage.getItem('siteStateList') ) || {};
 
 chrome.tabs.onActivated.addListener( function ( tab ) {
 
+    localStorage.setItem('highlighted', 'no');
+    chrome.tabs.sendMessage(tabs[0].id, {greeting: "nohighlighting"}, function(response) {
+      console.log(response.farewell);
+      });
+
+
     chrome.tabs.get( tab.tabId, function ( tabInfo ) {
 
         siteStateList = JSON.parse( localStorage.getItem('siteStateList') ) || {};
@@ -32,6 +38,12 @@ chrome.tabs.onActivated.addListener( function ( tab ) {
 });
 
 chrome.tabs.onUpdated.addListener( function ( tabId ) {
+
+    localStorage.setItem('highlighted', 'no');
+    chrome.tabs.sendMessage(tabs[0].id, {greeting: "nohighlighting"}, function(response) {
+      console.log(response.farewell);
+      });
+    //alert('changing tab');
 
     chrome.tabs.get( tabId, function ( tabInfo ) {
 

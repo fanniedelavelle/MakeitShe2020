@@ -1,9 +1,8 @@
 .ignore-css{all:unset;}
-.ignore-css.replacement {
-    color:red;
+/*.ignore-css.replacement {
     position: relative;
-    overflow: visible;
-}
+    overflow: hidden;
+}*/
 .ignore-css.tooltiptext {
     visibility: hidden;
     width: 100%;
@@ -19,10 +18,9 @@
     text-wrap: avoid;
 }
 
-.ignore-css.replacement:hover .tooltiptext {
+.ignore-css.replacement {
     visibility: visible;
-    background-color: black;
-    /*text-transform: uppercase;*/
+    background-color: none;
 }
 .ignore-css#make_it_she_wrap{
     position: fixed;

@@ -1,20 +1,49 @@
 var siteStateList;
 var activeDomain, currentUrl;
 
+
 function updateSiteStateList(site, state) {
 
     siteStateList[site] = state;
     localStorage.setItem('siteStateList', JSON.stringify(siteStateList));
+    console.log(localStorage.getItem('siteStateList'));
 
 };
 
+
+//var language = document.getElementById("language-dropdown").value;
 
 var m, f;
 
 function setStats(stats) {
 
-    if (!stats) return;
+    if (!stats) {
+        console.log ('no stats yet'); 
+        
+        /*chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
 
+                chrome.tabs.sendMessage(tabs[0].id, { from: 'popup', activate: true });
+                
+                chrome.tabs.sendMessage(tabs[0].id, { from: 'popup', action: 'getStats' }, setStats);
+                
+        });*/
+        
+        return;
+        }
+    
+    console.log(stats.stats.done);
+    
+    if (stats.stats.done === false) {
+        console.log('again');
+        chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+
+                chrome.tabs.sendMessage(tabs[0].id, { from: 'popup', activate: true });
+                
+                chrome.tabs.sendMessage(tabs[0].id, { from: 'popup', action: 'getStats' }, setStats);
+                
+        });
+    }
+    
     m = stats.stats.male;
     f = stats.stats.female;
     $('#malep').html(Math.round(stats.male));
@@ -36,6 +65,12 @@ function setStats(stats) {
             title: {
                 text: "Mentions of men and women",
             },
+            subtitles: [
+            {
+                text: "Based on " + stats.stats.num + " observations",
+                verticalAlign: "bottom"
+            }
+            ],
             data: [{
                 type: "pie",
                 startAngle: 240,
@@ -44,12 +79,13 @@ function setStats(stats) {
                 yValueFormatString: "##0.00\"%\"",
                 indexLabel: "{label} {y}",
                 dataPoints: [
-                    { y: Math.round(male), label: "Men", color: "purple" },
+                    { y: Math.round(male), label: "Men", color: "cornflowerblue" },
                     { y: Math.round(female), label: "Women", color: "green" }
                 ]
             }]
         });
         chart.render();
+
 
     }
 
@@ -57,53 +93,140 @@ function setStats(stats) {
 
 
 
-document.addEventListener('DOMContentLoaded', () => {
+    
+    
+  //highlight  
+    
+ function highlight (){
+  
+  if ($('#myCheck').prop("checked") == true){
+    
+      chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+      chrome.tabs.sendMessage(tabs[0].id, {greeting: "highlighting"}, function(response) {
+      console.log(response.farewell);
+      });
+      });
+      
+      
+      //chrome.storage.sync.set({highlighted: 'yes'});
+      localStorage.setItem('highlighted', 'yes');
+    
+  }
+  
+  else{
+    
+      /*chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+      chrome.tabs.sendMessage(tabs[0].id, {greeting: "nohighlighting"}, function(response) {
+      console.log(response.farewell);
+      });
+      });*/
+      chrome.tabs.query({active: true, currentWindow: true}, function(tabs) {
+      chrome.tabs.sendMessage(tabs[0].id, {greeting: "nohighlighting"}, function (response) {
+      console.log(response.farewell);
+      });
+      });
+      
+      
+      //chrome.storage.sync.set({highlighted: 'no'});
+      localStorage.setItem('highlighted', 'no');
+      
+      console.log('hi');
+   
+  }
+  
+  
+}
 
-    siteStateList = JSON.parse(localStorage.getItem('siteStateList')) || {};
-    activeDomain = localStorage.getItem('activeDomain');
+$('.highlighting').on('click', highlight);
 
-    chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+chrome.tabs.onUpdated.addListener(function(activeInfo) {
+    /*console.log(activeInfo.tabId);
+    $('#myCheck').prop("checked", false);
+    sessionStorage.setItem('highlighted', 'no');*/
+    console.log('new tab');
+    localStorage.clear();
+    localStorage.removeItem('highlighted');
+});
+
+var currentUrl = '';
+var newUrl = '';
+var tabCount = 0;
 
 
-        chrome.tabs.sendMessage(tabs[0].id, { from: 'popup', action: 'getStats' }, setStats);
+$('#on-off').bind('change', function (event) {
 
-    });
-
-    // On / Off Button
-
-    if (siteStateList[activeDomain] !== true) {
-
-        $('#on-off').switchButton({ checked: false, labels_placement: "left" });
-        $('#content').hide();
-        $('#disabled').show();
-
-    } else {
-
-        $('#on-off').switchButton({ checked: true, labels_placement: "left" });
-        $('#content').show();
-        $('#disabled').hide();
-
+        console.log("off - on");
+        tabCount++;
+        /*chrome.tabs.query({ 'active': true, 'lastFocusedWindow': true }, function (tabs) {
+    
+    if (tabCount === 1) {
+    currentUrl = tabs[0].url;
+    console.log(currentUrl);
     }
+    else {
+        newUrl = tabs[0].url;
+        if (currentUrl !== newUrl) {
+            $('#myCheck').prop("checked", false);
+            sessionStorage.setItem('highlighted', 'no');
+            currentUrl = newUrl;
+        }
+    
+    }
+    // $('#send-ref-mail').attr('href', 'mailto:makeitshe@gmail.com?subject=Reference Site&body=' + currentUrl);
+});*/
+        //localStorage.removeItem('highlighted');
 
-    $('#on-off').bind('change', function (event) {
-
+        console.log(currentUrl);
+        
         var enabled = $('#on-off')[0].checked;
+        
+        /*chrome.storage.sync.get('highlighted', result => {
+            console.log(result.highlighted);
+        });*/
+        var result = localStorage.getItem('highlighted');
+        console.log(result);
 
         if (enabled) {
 
             $('#content').show();
             $('#disabled').hide();
+            $('#highlight').show();
+            
+            
+            
+            $( "#myCheck" ).prop( "disabled", false );
+            
+            //chrome.storage.sync.get('highlighted', result => {
+                //console.log(result.highlighted);
+                
+                if (result === 'yes') {
+                    $( "#myCheck" ).prop( "checked", true );
+                    //highlight();
+                    }
+                else
+                    $( "#myCheck" ).prop( "checked", false );
+            //});
+            
+            //highlight();
             updateSiteStateList(activeDomain, true);
             chrome.browserAction.setIcon({ path: "icon_on.png" });
 
             chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
 
                 chrome.tabs.sendMessage(tabs[0].id, { from: 'popup', activate: true });
+                
+                //while (document.getElementById("chartContainer").style.display === 'none') {
+                console.log('turn on extension');
+                
                 setTimeout(function () {
 
                     chrome.tabs.sendMessage(tabs[0].id, { from: 'popup', action: 'getStats' }, setStats);
 
                 }, 100);
+                
+                //console.log(stats.stats.done);
+                
+                //}
 
             });
 
@@ -111,6 +234,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
             $('#content').hide();
             $('#disabled').show();
+            $('#highlight').hide();
+            $('#myCheck').prop("checked", false);
+            //highlight();
+          //  $( "#myCheck" ).prop( "disabled", true );
             updateSiteStateList(activeDomain, false);
             chrome.browserAction.setIcon({ path: "icon_off.png" });
 
@@ -123,8 +250,118 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
     });
+ 
+/*$('.closebtn').on('click', function () {
 
+    $(this).parent().hide();
+    console.log("clicked");
+    
+    }); */
 
+var count = 0;
+
+document.addEventListener('DOMContentLoaded', () => {
+    
+    count++;
+    //if (count > 1) {    
+        chrome.storage.sync.get('language', data => {
+            document.getElementById('language-dropdown').value = data.language;
+        });
+    //}
+    siteStateList = JSON.parse(localStorage.getItem('siteStateList')) || {};
+    activeDomain = localStorage.getItem('activeDomain');
+
+    /*chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+        chrome.tabs.sendMessage(tabs[0].id, { from: 'popup', action: 'getStats' }, setStats);
+        highlight();
+    });*/
+    
+    // On / Off Button
+
+    if (siteStateList[activeDomain] !== true) {
+
+        $('#on-off').switchButton({ checked: false, labels_placement: "left" });
+        $('#content').hide();
+        $('#disabled').show();
+        $('#highlight').hide();
+        $( "#myCheck" ).prop( "disabled", true );
+ 
+
+    } else {
+
+        $('#on-off').switchButton({ checked: true, labels_placement: "left" });
+        console.log('on');
+        $('#content').show();
+        $('#disabled').hide();
+        $('#highlight').show();
+        $( "#myCheck" ).prop( "disabled", false );
+        localStorage.setItem('highlighted', 'no');
+        /*if (count > 1) {    
+        chrome.storage.sync.get('language', data => {
+            document.getElementById('language-dropdown').value = data.language;
+        });
+    }*/
+
+    }
+
+    /*$('#on-off').bind('change', function (event) {
+
+        var enabled = $('#on-off')[0].checked;
+
+        if (enabled) {
+
+            $('#content').show();
+            $('#disabled').hide();
+            $('#highlight').show();
+            $( "#myCheck" ).prop( "disabled", false );
+            updateSiteStateList(activeDomain, true);
+            chrome.browserAction.setIcon({ path: "icon_on.png" });
+
+            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+
+                chrome.tabs.sendMessage(tabs[0].id, { from: 'popup', activate: true });
+                
+                //while (document.getElementById("chartContainer").style.display === 'none') {
+                console.log('turn on extension');
+                
+                setTimeout(function () {
+
+                    chrome.tabs.sendMessage(tabs[0].id, { from: 'popup', action: 'getStats' }, setStats);
+
+                }, 100);
+                
+                //console.log(stats.stats.done);
+                
+                //}
+
+            });
+
+        } else {
+
+            $('#content').hide();
+            $('#disabled').show();
+            $('#highlight').hide();
+            $('#myCheck').prop("checked", false);
+          //  $( "#myCheck" ).prop( "disabled", true );
+            updateSiteStateList(activeDomain, false);
+            chrome.browserAction.setIcon({ path: "icon_off.png" });
+
+            chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+
+                chrome.tabs.sendMessage(tabs[0].id, { from: 'popup', activate: false });
+
+            });
+
+        }
+
+    });*/
+
+document.getElementById('language-dropdown').onchange = function () {
+  chrome.storage.sync.set({language: this.value});
+  chrome.storage.sync.get('language', data => {
+  console.log(data.language);
+});
+};
 
     // Tweet
 
@@ -168,34 +405,86 @@ document.addEventListener('DOMContentLoaded', () => {
 
     });
 
+    $('#trendButton').click(function (event) {
+        calculateTrends()
+    });
+
 });
 
 
 
-$('#report-error').click(function () {
-    var subject = document.getElementById("sender-email");
-    var message = document.getElementById("email-message");
+//janani's edits
 
-    subject.value = "Error report";
-    message.placeholder = "Describe the error";
-    message.value = null;
-    $('#content').hide();
-    $('#email-content').show();
-});
-$('#btn-back').click(function () {
-    $('#content').show();
-    $('#email-content').hide();
+document.getElementById("email-message-female").addEventListener('input',() => {
+  console.log("hi");
+  var newinput = $("#email-message-female").val();
+  var submitButton = document.getElementById("btn-send-message-female");
+  if (newinput != ""){
+      submitButton.disabled = false;
+  }
+  
+  else{
+    
+    submitButton.disabled = true;
+    
+  }
+
+
 });
 
-$('#send-ref-mail').click(function () {
-    var subject = document.getElementById("sender-email");
-    var message = document.getElementById("email-message");
+document.getElementById("email-message-male").addEventListener('input',() => {
+  console.log("hi");
+  var newinput = $("#email-message-male").val();
+  var submitButton = document.getElementById("btn-send-message-male");
+  if (newinput != ""){
+      submitButton.disabled = false;
+  }
+  
+  else{
+    
+    submitButton.disabled = true;
+    
+  }
 
-    subject.value = "Here's a gender-biased website";
-    message.value = currentUrl;
-    $('#content').hide();
-    $('#email-content').show();
+
 });
+
+
+document.getElementById("btn-send-message-female").addEventListener('click', () => {
+    console.log('button clicked');  
+  
+  /*var suggestion = $("#email-message").val();
+  Email.send({
+    SecureToken: "15e46beb-40b4-450f-9ad3-77d85193674b",
+    To : "she@makeitshe.org",
+    From : "she@makeitshe.org",
+    Subject : "User Feedback",
+    Body : suggestion*/
+    SubForm();
+    var form = document.getElementById("myForm");
+    form.reset();
+    var submitButton = document.getElementById("btn-send-message-female");   
+    submitButton.disabled = true;
+
+});
+
+document.getElementById("btn-send-message-male").addEventListener('click', () => {
+    console.log('button clicked');  
+  
+  /*var suggestion = $("#email-message").val();
+  Email.send({
+    SecureToken: "15e46beb-40b4-450f-9ad3-77d85193674b",
+    To : "she@makeitshe.org",
+    From : "she@makeitshe.org",
+    Subject : "User Feedback",
+    Body : suggestion*/
+    SubForm();
+    var form = document.getElementById("myForm");
+    form.reset();
+    var submitButton = document.getElementById("btn-send-message-male");   
+    submitButton.disabled = true;
+});
+
 
 $('#go-to-twitter').click(function(){
     var newURL = "https://twitter.com/Makeitshe";
@@ -203,7 +492,6 @@ $('#go-to-twitter').click(function(){
 });
 
 $('#generate-pdf-content').click(function () {
-
     $('#content').hide();
     $('#pdf-content').show();
     $(this).hide();
@@ -213,6 +501,7 @@ $('#generate-pdf-content').click(function () {
         minWidth: 280
     });
 });
+
 
 function sendRequestPdf() {
     chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
@@ -234,7 +523,6 @@ function getPdfContent(content) {
     var all_male_words = content.content.all_male_words;
     var all_female_words = content.content.all_female_words;
     var name_dict = content.content.name_dict;
-    var word_dict = content.content.word_dict;
     var m_count = 0, f_count = 0;
     var m_percent = 0, f_percent = 0;
     var values_name = "";
@@ -303,9 +591,7 @@ function getPdfContent(content) {
                 var w = words[i].replace(/[!?,.;`' ]/, '');
 
                 if (w === 'Mr' || w === 'Ms' || w === 'M' || w === 'Mme' || w === 'Lady' || w === 'Lord') {
-
                     words.slice(i + 1, 1);
-
                 }
 
             }
@@ -315,9 +601,7 @@ function getPdfContent(content) {
             for (var i = 0; i < words.length; i++) {
 
                 if (values_name.indexOf(words[i].toUpperCase()) !== -1 || name_dict[words[i]] && name_dict[words[i + 1]]) {
-
                     words.slice(i + 1, 1);
-
                 }
 
             }
@@ -328,15 +612,11 @@ function getPdfContent(content) {
             for (var i = 0; i < words.length; i++) {
 
                 if (all_male_words.indexOf(words[i].toLowerCase()) >= 0) {
-
                     m_count++;
-
                 }
 
                 if (all_female_words.indexOf(words[i].toLowerCase()) >= 0) {
-
                     f_count++;
-
                 }
 
             }
@@ -359,7 +639,7 @@ function getPdfContent(content) {
                     yValueFormatString: "##0.00\"%\"",
                     indexLabel: "{label} {y}",
                     dataPoints: [
-                        { y: Math.round(m_percent), label: "Men", color: "purple" },
+                        { y: Math.round(m_percent), label: "Men", color: "cornflowerblue" },
                         { y: Math.round(f_percent), label: "Women", color: "green" }
                     ]
                 }]
@@ -375,6 +655,21 @@ function getPdfContent(content) {
     });
 
 }
+
+//User Trends
+
+chrome.tabs.query({ active: true, currentWindow: true }, function (tabs) {
+
+        $('#usertrends').click(function (event) {
+
+
+            chrome.tabs.create({
+                active: true,
+                url: chrome.extension.getURL('usertrends.html')
+            });
+        
+        });
+});
 
 
 /**
@@ -528,6 +823,22 @@ $('#email-message').keyup(function () {
     // $('#btn-send-message').attr('href','mailto:makeitshe@gmail.com?subject='+$('#sender-email').val()+'&body='+$(this).val());
     $('#btn-send-message').attr('href', 'mailto:ncampowoytuk@gmail.com?subject=' + $('#sender-email').val() + '&body=' + $(this).val());
 });
+
+function SubForm (){
+    console.log('form submitted');
+    $.ajax({
+        url:'https://api.apispreadsheets.com/data/1256/',
+        type:'post',
+        data:$("#myForm").serializeArray(),
+        success: function(){
+          alert("Form Data Submitted :)")
+        },
+        error: function(){
+          alert("There was an error :(")
+        }
+    });
+}
+
 // $('#btn-send-message').click(function(){
 //   Email.send({
 //     Host : "smtp.elasticemail.com",
@@ -698,7 +1009,7 @@ chrome.tabs.query({ 'active': true, 'lastFocusedWindow': true }, function (tabs)
 
 
 //  var message_suggestions = {
-//    "he": "they",
+//     "he": "they",
 //     "she": "they",
 //     "his": "theirs",
 //     "hers": "theirs", 
@@ -1075,7 +1386,199 @@ chrome.tabs.query({ 'active': true, 'lastFocusedWindow': true }, function (tabs)
 //   "yachtsmen": "yachtspersons",
 //   "yardman": "yardperson",
 //   "yardmen": "yardpersons "
-
 // };
+
+
+/*
+ * activates trend button
+ */
+document.getElementById("trendYears").addEventListener('input',() => {
+  var newinput = $("#trendYears").val();
+  var trendButton = document.getElementById("trendButton");
+  if (newinput != ""){
+      trendButton.disabled = false;
+  } else {
+    trendButton.disabled = true; 
+  }
+});
+
+/*
+ * processes user inputs and button clicks
+ */
+function calculateTrends() {
+  var text = document.getElementById("trendButton").firstChild;
+    if (text.data == "Show Trends") {
+      var years = document.getElementById("trendYears").value;
+      var maleMentions = mentions(findData(years));
+      var femaleMentions = new Array();
+      var i = 0;
+      while (i != maleMentions.length) {
+        femaleMentions.push(100 - maleMentions[i]);
+        i++;
+      }
+      //trendGraph(femaleMentions, maleMentions, years)
+      var trendChart = trendGraph([20,14,6,2,22,11,33,21,42,28,20,35], [80,86,94,98,78,89,67,79,58,72,80,65], years)
+      trendChart.render();
+    } else {
+      $('#trendContainer').hide();
+      $('#chartContainer').show();
+    }
+    text.data = text.data == "Show Trends" ? "Close Trends" : "Show Trends";
+}
+
+/* 
+ * gathers data during time range on past articles of website
+ */
+function findData(years) {
+    var currYear = new Date().getFullYear(),
+        startYear = currYear - years,
+        //yearArray = arrRange(startYear, currYear),
+        waybackApiUrl = "http://web.archive.org/cdx/search/cdx?output=json&fl=timestamp",
+        waybackQueryUrl = waybackApiUrl + "url=" + currentUrl + "&from=" + startYear + "&to=" + currYear;
+    $.ajax({
+        url: waybackQueryUrl,
+        dataType: 'json',
+        success: function(data) {
+            console.log("success1 – data: " + data);
+            },
+        error: function(data) {
+            console.log("error1 – data: " + data);
+        }
+    }).done(function(data) {
+            //console.log("inside first ajax call");
+        for(var i = 1; i < 10; i++) { //data.length
+            var urlToFetch = "https://web.archive.org/web/" + data[i][0] + "/" + currUrl;
+            /*$.ajax({
+                url: urlToFetch,
+                dataType: 'html',
+                success: function(data) {
+                  console.log("success2 – data: " + data);
+                },
+                error: function(data) {
+                  console.log("error2 – data: " + data);
+                }
+            }).done(function(response) {
+                    console.log(typeof(response));
+                // apply your statistics function which gets the words
+                //guess for response type: object w data atribute (respone.data)
+            }).fail(function( jqXHR, textStatus ) {  
+                    console.log( "Triggered fail callback 2: " + textStatus );
+                console.log(typeof(response));
+                            //alert( "Triggered fail callback 2: " + textStatus );  
+                        });*/
+        }
+    }).fail(function( jqXHR, textStatus ) {  
+            console.log( "Triggered fail callback 1: " + textStatus );
+        console.log(typeof(data));
+            //alert( "Triggered fail callback 1: " + textStatus );
+        });
+} 
+// might need to shift this function into the background -- look to chrome extension guid (background.js)
+// if i need to persist data use localStorage feature
+
+
+/* 
+ * calculates averages 
+ */
+function mentions(data) {
+  return [data];
+}
+
+/* 
+ * fills aray with numbers in a given range
+ */
+function arrRange(start, end) {
+    return Array(end - start + 1).fill().map((_, idx) => start + idx)
+}
+
+/* 
+ * fills array with mlast 12 months
+ */
+function arrMonths() {
+
+    var time = new Array();
+    var months = new Array("Jan", "Febr", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec");
+    var today = new Date();
+    var currMonth = today.getMonth();
+
+    var i;
+    for (i=0; i<12; i++) {
+        time.push(months[currMonth])
+        currMonth++;
+        if (currMonth > 11) {
+            currMonth = 0;
+        }
+    }
+
+  return time;
+}
+
+/*
+ * function plotting two trend lines showing the percent mentions of men and women
+ * against a timeline range years back from today
+ */
+function trendGraph(women, men, range) {
+    var time = new Array();
+    var label = new Array();
+    if (range == 1) {
+        time = arrRange(1, 13)
+        label = arrMonths();
+    } else {
+        currYear = new Date().getFullYear();
+        time = arrRange(currYear-range, currYear);
+        label = time.map(String);
+    }
+    wdata = [], j=0, l = Math.min(women.length, time.length);
+    for (j = 0; j < l; j++) {
+        wdata.push({"x" : time[j], label: label[j], "y" : women[j]});
+    }
+    mdata = [], i=0, l = Math.min(men.length, time.length);
+    for (i = 0; i < l; i++) {
+        mdata.push({"x" : time[i], label: label[i], "y" : men[i]});
+    }
+
+    $('#trendContainer').show();
+    var lineChart = new CanvasJS.Chart("trendContainer", {
+        animationEnabled: true, 
+        title: {
+          text: "Trend of Mentions" },
+        subtitles:[
+            {
+            text: "overtime averages of the mentions of women & men", 
+            fontWeight: "thin"
+            }
+            ],
+        axisY: {
+            suffix: "%" },
+        toolTip: {
+            shared: true
+        },
+        legend: {
+            cursor: "pointer",
+            verticalAlign: "top",
+            horizontalAlign: "right",
+            dockInsidePlotArea: true, },
+        data: [
+         {
+            type: "spline",
+            name: "Women",
+            color: "Green",
+            showInLegend: true,
+            yValueFormatString: "##0\"%\"",
+            markerSize: 0,
+            dataPoints: wdata },
+         {
+            type: "spline",
+            name: "Men",
+            color: "cornflowerblue",
+            showInLegend: true,
+            yValueFormatString: "##0\"%\"",
+            markerSize: 0,
+            dataPoints: mdata } ]
+        }) ;
+
+    return lineChart;
+
+}
 
 
